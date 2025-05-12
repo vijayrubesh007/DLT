@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Governance {
+    struct Proposal {
+        string description;
+        uint256 voteCount;
+        bool executed;
+        mapping(address => bool) voters;
+    }
+
+    mapping(address => uint256) public stakes;
+    mapping(uint256 => Proposal) public proposals;
+    uint256 public proposalId;
+
+    // Stake tokens to participate in voting
+    function stake() public payable {
+        require(msg.value > 0, "Stake must be positive");
+        stakes[msg.sender] += msg.value;
+    }
+
+    // Create a new proposal
+    function createProposal(string memory desc) public returns (uint256) {
+        proposalId++;
+        proposals[proposalId].description = desc;
+        return proposalId;
+    }
+
+    // Vote on a proposal
+    function vote(uint256 _id) public {
+        Proposal storage p = proposals[_id];
+        require(!p.voters[msg.sender], "Already voted");
+        require(stakes[msg.sender] > 0, "No stake");
+
+        p.voteCount += stakes[msg.sender];
+        p.voters[msg.sender] = true;
+    }
+
+    // Execute if voteCount > threshold
+    function executeProposal(uint256 _id, uint256 threshold) public {
+        Proposal storage p = proposals[_id];
+        require(!p.executed, "Already executed");
+        require(p.voteCount >= threshold, "Not enough votes");
+
+        p.executed = true;
+        // Here you can implement domain approval, etc.
+    }
+}
