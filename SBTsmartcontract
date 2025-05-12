@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract SoulboundHealthToken is ERC721URIStorage, Ownable {
+    uint256 private _tokenIds;
+
+    mapping(uint256 => bool) public revoked;
+
+    constructor() ERC721("HealthSBT", "HSBT") {}
+
+    function issueToken(address recipient, string memory tokenURI) public onlyOwner returns (uint256) {
+        _tokenIds++;
+        uint256 newTokenId = _tokenIds;
+        _mint(recipient, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+        return newTokenId;
+    }
+
+    function burnToken(uint256 tokenId) public onlyOwner {
+        _burn(tokenId);
+    }
+
+    function revokeToken(uint256 tokenId) public onlyOwner {
+        revoked[tokenId] = true;
+    }
+
+    // Override transfer functions to prevent transfers (make soulbound)
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override {
+        require(from == address(0) || to == address(0), "Soulbound: Token not transferable");
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+}
